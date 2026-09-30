@@ -40,4 +40,25 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
     spdlog::spdlog
+    inicpp::inicpp
 )
+
+
+if(BUILD_TESTS)
+  set(GOOGLE_TEST_SHA 063de7e9578f82b369302001269680b4b1553359)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/${GOOGLE_TEST_SHA}.zip
+  )
+  FetchContent_MakeAvailable(googletest)
+
+  enable_testing()
+
+  file(GLOB TEST_SOURCE_FILES "test/*.cpp")
+  add_executable(${PROJECT_NAME}_test ${TEST_SOURCE_FILES} ${SOURCE_FILES})
+  target_include_directories(${PROJECT_NAME}_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
+  target_link_libraries(${PROJECT_NAME}_test PRIVATE GTest::gtest_main spdlog::spdlog inicpp::inicpp)
+
+  include(GoogleTest)
+  gtest_discover_tests(${PROJECT_NAME}_test)
+endif()
