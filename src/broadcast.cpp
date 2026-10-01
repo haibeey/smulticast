@@ -53,7 +53,6 @@ void smulticast::Handler::do_work() {
     forward_sock = forwader.connect();
     if (forward_sock >= 0) {
       forwaders_sock.push_back(forward_sock);
-    } else {
     }
   }
 
