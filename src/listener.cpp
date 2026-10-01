@@ -80,7 +80,7 @@ smulticast::Listener::operator=(smulticast::Listener &&l) noexcept {
 [[nodiscard]] int smulticast::Listener::accept() {
   int sock_fd = bind();
   if (sock_fd < 0) {
-    spdlog::error("[listener.cpp:84] Failed bind");
+    spdlog::error("[listener.cpp:83] Failed bind");
     return ERR;
   }
   int incoming_sock = -1;
@@ -88,7 +88,7 @@ smulticast::Listener::operator=(smulticast::Listener &&l) noexcept {
   if ((incoming_sock = ::accept(
                           sock_fd, reinterpret_cast<struct sockaddr *>(&addr),
                           &addrlen)) < 0) {
-    spdlog::error("[listener.cpp:87] Failed to accept connection");
+    spdlog::error("[listener.cpp:91] Failed to accept connection");
     return ERR;
   }
   return incoming_sock;

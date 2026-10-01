@@ -57,13 +57,13 @@ void smulticast::Handler::do_work() {
   }
 
   if (forwaders_sock.empty()) {
-    spdlog::warn("[broadcast.cpp:72] Thread {}, could not connect. stopping",
+    spdlog::warn("[broadcast.cpp:60] Thread {}, could not connect. stopping",
                  id);
     return;
   }
 
   if (forwaders_sock.size() != forwarders.size()) {
-    spdlog::warn("[broadcast.cpp:78] Some connection were unsuccesful");
+    spdlog::warn("[broadcast.cpp:66] Some connection were unsuccesful");
   }
 
   while (alive) {
@@ -97,7 +97,7 @@ void smulticast::Handler::do_work() {
 
         sent = ::send(sock_id, buffer.data() + cursor, to_send, 0);
         if (sent <= 0) {
-          spdlog::warn("[broadcast.cpp:109] Thread {}, socket {} disconnected "
+          spdlog::warn("[broadcast.cpp:100] Thread {}, socket {} disconnected "
                        ", buf left is {}",
                        id, sock_id, buf_size);
           dead_socks.emplace(sock_id);
@@ -114,7 +114,7 @@ void smulticast::Handler::do_work() {
             sent =
                 ::send(sock_id, buffer.data() + sock_cursor, sock_to_send, 0);
             if (sent <= 0) {
-              spdlog::warn("[broadcast.cpp:127] Thread {}, socket {} "
+              spdlog::warn("[broadcast.cpp:117] Thread {}, socket {} "
                            "disconnected , buf left is {}",
                            id, sock_id, buf_size);
               dead_socks.emplace(sock_id);
@@ -181,19 +181,19 @@ smulticast::Broadcast::Broadcast(std::string config_path, int num_threads)
 };
 
 int smulticast::Broadcast::setup() {
-  spdlog::info("[broadcast.cpp:183] Just setting up the broadcast");
+  spdlog::info("[broadcast.cpp:184] Just setting up the broadcast");
 
   std::vector<std::vector<smulticast::Forwarder>> fwds =
       get_forward_address(config_path);
 
-  spdlog::info("[broadcast.cpp:188] Listening for a connection !!!");
+  spdlog::info("[broadcast.cpp:189] Listening for a connection !!!");
   if (listener_sock == -1 && (listener_sock = slis.accept()) < 0) {
-    spdlog::error("[broadcast.cpp:189] Connection Failed. sock id is {}",
+    spdlog::error("[broadcast.cpp:191] Connection Failed. sock id is {}",
                   listener_sock);
     return ERR;
   }
 
-  spdlog::info("[broadcast.cpp:190] Connection accepted. sock id is {}",
+  spdlog::info("[broadcast.cpp:196] Connection accepted. sock id is {}",
                listener_sock);
 
   int pos = 0;
@@ -207,8 +207,18 @@ int smulticast::Broadcast::setup() {
 ssize_t smulticast::Broadcast::run(std::array<std::byte, BUFSIZE> &buffer) {
 
   ssize_t recv_bytes = ::recv(listener_sock, buffer.data(), BUFSIZE, 0);
-  if (recv_bytes <= 0)
+
+  switch (recv_bytes) {
+  case 0: {
+    ::close(listener_sock);
+    if ((listener_sock = slis.accept()) < 0)
+      return ERR;
+    return OK;
+  }
+  case -1:
     return ERR;
+  }
+
   for (std::unique_ptr<Handler> &handler : handlers) {
     handler->handle(std::span<std::byte>(buffer.data(), recv_bytes));
   }
